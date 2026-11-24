@@ -1,0 +1,103 @@
+openapi: 3.1.0
+info:
+  title: COT backend foundation
+  version: 0.1.0
+  description: Local-only phase-one endpoints shared by the game and trading services.
+servers:
+  - url: http://127.0.0.1:8080
+    description: Local game service
+  - url: http://127.0.0.1:8081
+    description: Local trading service
+security:
+  - LocalBearer: []
+paths:
+  /health/live:
+    get:
+      operationId: getLiveness
+      security: []
+      responses:
+        '200':
+          description: Process is serving requests independently of database availability.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, service, version]
+                properties:
+                  status: {const: live}
+                  service: {type: string}
+                  version: {type: string}
+  /health/ready:
+    get:
+      operationId: getReadiness
+      security: []
+      responses:
+        '200':
+          description: Database is available and its migration history matches this application.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Readiness'}
+        '503':
+          description: Database is unavailable, migrations are missing, or migration history differs.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Readiness'}
+  /v1/me:
+    get:
+      operationId: getCurrentIdentity
+      responses:
+        '200':
+          description: The server-configured local identity authenticated by the bearer token.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [principal, service, requestId]
+                properties:
+                  principal:
+                    type: object
+                    required: [playerId]
+                    properties:
+                      playerId: {type: string}
+                  service: {type: string}
+                  requestId: {$ref: '#/components/schemas/RequestId'}
+        '401':
+          description: Missing, malformed, duplicated, or incorrect bearer credentials.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Error'}
+components:
+  securitySchemes:
+    LocalBearer:
+      type: http
+      scheme: bearer
+      description: Generated development token; this is not production authentication or a JWT.
+  schemas:
+    RequestId:
+      type: string
+      pattern: '^[a-f0-9]{32}$'
+    Readiness:
+      type: object
+      required: [ready, service, dependencies, requestId]
+      properties:
+        ready: {type: boolean}
+        service: {type: string}
+        requestId: {$ref: '#/components/schemas/RequestId'}
+        dependencies:
+          type: object
+          required: [database]
+          properties:
+            database:
+              type: string
+              enum: [ready, migrations_required, migration_mismatch, database_unavailable]
+    Error:
+      type: object
+      required: [error, requestId]
+      properties:
+        requestId: {$ref: '#/components/schemas/RequestId'}
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: {type: string}
+            message: {type: string}

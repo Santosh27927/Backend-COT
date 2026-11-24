@@ -1,0 +1,92 @@
+{
+  "id": "perpetual-isolated-liquidation-5x",
+  "version": 1,
+  "level": 2,
+  "title": "Isolated 5x liquidation",
+  "sourceMode": "scripted",
+  "durationSeconds": 180,
+  "products": [
+    "perpetual"
+  ],
+  "orderTypes": [
+    "MARKET"
+  ],
+  "timeInForce": [
+    "IOC"
+  ],
+  "goals": [
+    "leverage_5",
+    "liquidated"
+  ],
+  "requires": [
+    "perpetual-isolated-leverage-2x"
+  ],
+  "frames": [
+    {
+      "offsetMs": 0,
+      "prices": {
+        "XRP": "2",
+        "SOL": "100",
+        "ETH": "2000"
+      }
+    },
+    {
+      "offsetMs": 30000,
+      "prices": {
+        "XRP": "2.1",
+        "SOL": "105",
+        "ETH": "2100"
+      }
+    },
+    {
+      "offsetMs": 60000,
+      "prices": {
+        "XRP": "2.5",
+        "SOL": "125",
+        "ETH": "2500"
+      }
+    },
+    {
+      "offsetMs": 90000,
+      "prices": {
+        "XRP": "2",
+        "SOL": "100",
+        "ETH": "2000"
+      }
+    },
+    {
+      "offsetMs": 120000,
+      "prices": {
+        "XRP": "1.4",
+        "SOL": "70",
+        "ETH": "1400"
+      }
+    },
+    {
+      "offsetMs": 150000,
+      "prices": {
+        "XRP": "2.2",
+        "SOL": "110",
+        "ETH": "2200"
+      }
+    },
+    {
+      "offsetMs": 180000,
+      "prices": {
+        "XRP": "2",
+        "SOL": "100",
+        "ETH": "2000"
+      }
+    }
+  ],
+  "feeBps": 0,
+  "fundingBps": 0,
+  "slippageBps": 0,
+  "liquidity": "unlimited",
+  "leverages": [
+    1,
+    2,
+    5
+  ],
+  "maintenanceBps": 100
+}

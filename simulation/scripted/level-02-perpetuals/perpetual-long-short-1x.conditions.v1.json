@@ -1,0 +1,91 @@
+{
+  "id": "perpetual-long-short-1x",
+  "version": 1,
+  "level": 2,
+  "title": "Perpetual long and short at 1x",
+  "sourceMode": "scripted",
+  "durationSeconds": 180,
+  "products": [
+    "perpetual"
+  ],
+  "orderTypes": [
+    "MARKET"
+  ],
+  "timeInForce": [
+    "IOC"
+  ],
+  "goals": [
+    "perp_long",
+    "perp_short",
+    "perp_closed"
+  ],
+  "requires": [
+    "spot-stop-limit-trigger"
+  ],
+  "frames": [
+    {
+      "offsetMs": 0,
+      "prices": {
+        "XRP": "2",
+        "SOL": "100",
+        "ETH": "2000"
+      }
+    },
+    {
+      "offsetMs": 30000,
+      "prices": {
+        "XRP": "2.1",
+        "SOL": "105",
+        "ETH": "2100"
+      }
+    },
+    {
+      "offsetMs": 60000,
+      "prices": {
+        "XRP": "1.95",
+        "SOL": "97.5",
+        "ETH": "1950"
+      }
+    },
+    {
+      "offsetMs": 90000,
+      "prices": {
+        "XRP": "1.8",
+        "SOL": "90",
+        "ETH": "1800"
+      }
+    },
+    {
+      "offsetMs": 120000,
+      "prices": {
+        "XRP": "2.2",
+        "SOL": "110",
+        "ETH": "2200"
+      }
+    },
+    {
+      "offsetMs": 150000,
+      "prices": {
+        "XRP": "1.6",
+        "SOL": "80",
+        "ETH": "1600"
+      }
+    },
+    {
+      "offsetMs": 180000,
+      "prices": {
+        "XRP": "2.05",
+        "SOL": "102.5",
+        "ETH": "2050"
+      }
+    }
+  ],
+  "feeBps": 0,
+  "fundingBps": 0,
+  "slippageBps": 0,
+  "liquidity": "unlimited",
+  "leverages": [
+    1
+  ],
+  "maintenanceBps": 100
+}
