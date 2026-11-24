@@ -1,0 +1,21 @@
+name: cot-backend-local
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: cot
+      POSTGRES_DB: cot
+      POSTGRES_PASSWORD: ${COT_POSTGRES_PASSWORD:?Run make init-local first}
+    ports:
+      - "127.0.0.1:${COT_DB_PORT:-55432}:5432"
+    volumes:
+      - cot-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cot -d cot"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+    cpus: 0.5
+    mem_limit: 512m
+volumes:
+  cot-postgres:

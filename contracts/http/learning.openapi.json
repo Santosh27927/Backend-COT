@@ -1,0 +1,1887 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "COT learning-session foundation",
+    "version": "0.5.0",
+    "description": "Local scripted spot, isolated perpetuals, and mixed-product learning. One shared wallet per lesson; zero costs and unlimited market quantity. No live feed or real venue orders."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8080",
+      "description": "game-service only"
+    }
+  ],
+  "security": [
+    {
+      "LocalBearer": []
+    }
+  ],
+  "paths": {
+    "/v1/scenarios": {
+      "get": {
+        "operationId": "listScenarios",
+        "description": "Preparation plus eleven scripted lessons, with public prerequisites. Private future script frames are omitted.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Preparation plus eleven scripted lessons, with public prerequisites. Private future script frames are omitted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "scenarios",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "scenarios": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Scenario"
+                      }
+                    },
+                    "requestId": {
+                      "$ref": "#/components/schemas/RequestId"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/BodyTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/v1/sessions": {
+      "get": {
+        "operationId": "listSessions",
+        "description": "Latest 100 owned sessions, newest first. GET a specific session to reconcile expiry and obtain its report.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Latest 100 owned sessions, newest first. GET a specific session to reconcile expiry and obtain its report.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "sessions",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "sessions": {
+                      "type": "array",
+                      "maxItems": 100,
+                      "items": {
+                        "$ref": "#/components/schemas/Summary"
+                      }
+                    },
+                    "requestId": {
+                      "$ref": "#/components/schemas/RequestId"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/BodyTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      },
+      "post": {
+        "operationId": "startSession",
+        "description": "Atomically create a fresh account/session or replay the original committed receipt.",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._:-]{8,128}$"
+            },
+            "description": "Stable per command and scoped to the authenticated player. Replays return the original receipt; GET the session for current state."
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Atomically create a fresh account/session or replay the original committed receipt.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ViewResponse"
+                }
+              }
+            },
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "boolean"
+                },
+                "description": "True when the original receipt was replayed."
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/BodyTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "scenarioId"
+                ],
+                "properties": {
+                  "scenarioId": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sessions/{id}": {
+      "get": {
+        "operationId": "getSession",
+        "description": "Current session state, paper balance, server time, and completed report when available.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current session state, paper balance, server time, and completed report when available.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ViewResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/BodyTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/v1/sessions/{id}/restart": {
+      "post": {
+        "operationId": "restartSession",
+        "description": "Atomically create a fresh account/session or replay the original committed receipt.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._:-]{8,128}$"
+            },
+            "description": "Stable per command and scoped to the authenticated player. Replays return the original receipt; GET the session for current state."
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Atomically create a fresh account/session or replay the original committed receipt.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ViewResponse"
+                }
+              }
+            },
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "boolean"
+                },
+                "description": "True when the original receipt was replayed."
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/BodyTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sessions/{id}/account": {
+      "get": {
+        "operationId": "getSessionAccount",
+        "description": "Paper balance owned by this session.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paper balance owned by this session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "account",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "account": {
+                      "$ref": "#/components/schemas/Account"
+                    },
+                    "requestId": {
+                      "$ref": "#/components/schemas/RequestId"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/BodyTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/v1/sessions/{id}/ledger": {
+      "get": {
+        "operationId": "getSessionLedger",
+        "description": "Player-facing allocation history. Internal balancing entries are omitted.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Player-facing allocation history. Internal balancing entries are omitted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "entries",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "entries": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/LedgerEntry"
+                      }
+                    },
+                    "requestId": {
+                      "$ref": "#/components/schemas/RequestId"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/BodyTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/v1/sessions/{id}/events": {
+      "get": {
+        "operationId": "getSessionEvents",
+        "description": "Events ordered by per-session sequence. Retain nextAfter and request it after reconnecting.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
+            }
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Events ordered by per-session sequence. Retain nextAfter and request it after reconnecting.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "events",
+                    "nextAfter",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "events": {
+                      "type": "array",
+                      "maxItems": 100,
+                      "items": {
+                        "$ref": "#/components/schemas/Event"
+                      }
+                    },
+                    "nextAfter": {
+                      "type": "integer",
+                      "format": "int64",
+                      "minimum": 0
+                    },
+                    "requestId": {
+                      "$ref": "#/components/schemas/RequestId"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/BodyTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/v1/sessions/{id}/orders": {
+      "post": {
+        "operationId": "submitScriptedOrder",
+        "description": "Execute an owned, idempotent command under the backend clock; validation failures create no accepted order.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._:-]{8,128}$"
+            },
+            "description": "Stable per command and scoped to the authenticated player. Replays return the original receipt; GET the session for current state."
+          }
+        ],
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/BodyTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          },
+          "200": {
+            "description": "Atomically create a fresh account/session or replay the original committed receipt.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ViewResponse"
+                }
+              }
+            },
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "boolean"
+                },
+                "description": "True when the original receipt was replayed."
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "product",
+                  "symbol",
+                  "side",
+                  "type",
+                  "quantity"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "product": {
+                    "type": "string",
+                    "enum": [
+                      "spot",
+                      "perpetual"
+                    ]
+                  },
+                  "symbol": {
+                    "type": "string",
+                    "enum": [
+                      "XRP",
+                      "SOL",
+                      "ETH"
+                    ]
+                  },
+                  "side": {
+                    "type": "string",
+                    "enum": [
+                      "BUY",
+                      "SELL"
+                    ]
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "MARKET",
+                      "LIMIT",
+                      "STOP_LIMIT"
+                    ]
+                  },
+                  "quantity": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]{1,6})?$"
+                  },
+                  "timeInForce": {
+                    "type": "string",
+                    "enum": [
+                      "GTC",
+                      "IOC",
+                      "FOK"
+                    ]
+                  },
+                  "limitPrice": {
+                    "type": "string"
+                  },
+                  "stopPrice": {
+                    "type": "string"
+                  },
+                  "leverage": {
+                    "type": "integer",
+                    "enum": [
+                      0,
+                      1,
+                      2,
+                      5
+                    ]
+                  },
+                  "reduceOnly": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sessions/{id}/orders/{orderId}/cancel": {
+      "post": {
+        "operationId": "cancelScriptedOrder",
+        "description": "Execute an owned, idempotent command under the backend clock; validation failures create no accepted order.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._:-]{8,128}$"
+            },
+            "description": "Stable per command and scoped to the authenticated player. Replays return the original receipt; GET the session for current state."
+          },
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/BodyTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          },
+          "200": {
+            "description": "Atomically create a fresh account/session or replay the original committed receipt.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ViewResponse"
+                }
+              }
+            },
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "boolean"
+                },
+                "description": "True when the original receipt was replayed."
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sessions/{id}/finish": {
+      "post": {
+        "operationId": "finishSession",
+        "description": "Execute an owned, idempotent command under the backend clock; validation failures create no accepted order.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._:-]{8,128}$"
+            },
+            "description": "Stable per command and scoped to the authenticated player. Replays return the original receipt; GET the session for current state."
+          }
+        ],
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/BodyTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          },
+          "200": {
+            "description": "Atomically create a fresh account/session or replay the original committed receipt.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ViewResponse"
+                }
+              }
+            },
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "boolean"
+                },
+                "description": "True when the original receipt was replayed."
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/progress": {
+      "get": {
+        "operationId": "getOwnedLessonProgress",
+        "description": "Completed practical lessons for the authenticated player, independent of recent-session pagination.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Completed practical lessons for the authenticated player, independent of recent-session pagination.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "progress",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "progress": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/LessonProgress"
+                      }
+                    },
+                    "requestId": {
+                      "$ref": "#/components/schemas/RequestId"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/BodyTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "LocalBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Existing opaque development token; production authentication is deferred."
+      }
+    },
+    "schemas": {
+      "RequestId": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{32}$"
+      },
+      "Error": {
+        "type": "object",
+        "required": [
+          "error",
+          "requestId"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          },
+          "requestId": {
+            "$ref": "#/components/schemas/RequestId"
+          }
+        }
+      },
+      "Account": {
+        "type": "object",
+        "required": [
+          "id",
+          "currency",
+          "scale",
+          "balanceMinor",
+          "demo"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
+          },
+          "currency": {
+            "const": "USD"
+          },
+          "scale": {
+            "type": "integer",
+            "enum": [
+              2,
+              12
+            ]
+          },
+          "balanceMinor": {
+            "type": "string",
+            "pattern": "^[0-9]+$"
+          },
+          "demo": {
+            "const": true
+          }
+        }
+      },
+      "Scenario": {
+        "type": "object",
+        "required": [
+          "id",
+          "version",
+          "title",
+          "townHall",
+          "market",
+          "currency",
+          "startingBalanceMinor",
+          "currencyScale",
+          "durationSeconds",
+          "endPolicy",
+          "executionEnabled",
+          "objectives"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "title": {
+            "type": "string"
+          },
+          "townHall": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "market": {
+            "type": "string",
+            "enum": [
+              "spot",
+              "perpetual",
+              "mixed"
+            ]
+          },
+          "currency": {
+            "const": "USD"
+          },
+          "startingBalanceMinor": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]*$"
+          },
+          "currencyScale": {
+            "type": "integer",
+            "enum": [
+              2,
+              12
+            ]
+          },
+          "durationSeconds": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3600
+          },
+          "endPolicy": {
+            "const": "cancel_pending_and_close_holdings"
+          },
+          "executionEnabled": {
+            "type": "boolean"
+          },
+          "objectives": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          },
+          "sourceMode": {
+            "const": "scripted"
+          },
+          "scriptId": {
+            "type": "string"
+          },
+          "requires": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Report": {
+        "type": "object",
+        "required": [
+          "reason",
+          "endPolicy",
+          "effectiveAt",
+          "processedAt",
+          "finalAccount",
+          "executionEnabled",
+          "pendingOrdersCanceled",
+          "holdingsClosed"
+        ],
+        "properties": {
+          "reason": {
+            "type": "string",
+            "enum": [
+              "time_elapsed",
+              "restarted"
+            ]
+          },
+          "endPolicy": {
+            "const": "cancel_pending_and_close_holdings"
+          },
+          "effectiveAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "processedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "finalAccount": {
+            "$ref": "#/components/schemas/Account"
+          },
+          "executionEnabled": {
+            "type": "boolean"
+          },
+          "pendingOrdersCanceled": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "holdingsClosed": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "learningPassed": {
+            "type": "boolean"
+          },
+          "trading": {
+            "$ref": "#/components/schemas/Trading"
+          }
+        }
+      },
+      "Session": {
+        "type": "object",
+        "required": [
+          "id",
+          "playerId",
+          "scenario",
+          "state",
+          "startedAt",
+          "expiresAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
+          },
+          "playerId": {
+            "type": "string"
+          },
+          "scenario": {
+            "$ref": "#/components/schemas/Scenario"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "active",
+              "completed"
+            ]
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "report": {
+            "$ref": "#/components/schemas/Report"
+          }
+        }
+      },
+      "View": {
+        "type": "object",
+        "required": [
+          "session",
+          "account",
+          "serverTime"
+        ],
+        "properties": {
+          "session": {
+            "$ref": "#/components/schemas/Session"
+          },
+          "account": {
+            "$ref": "#/components/schemas/Account"
+          },
+          "serverTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "trading": {
+            "$ref": "#/components/schemas/Trading"
+          }
+        }
+      },
+      "ViewResponse": {
+        "type": "object",
+        "required": [
+          "data",
+          "requestId"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/View"
+          },
+          "requestId": {
+            "$ref": "#/components/schemas/RequestId"
+          }
+        }
+      },
+      "Event": {
+        "type": "object",
+        "required": [
+          "sequence",
+          "kind",
+          "effectiveAt",
+          "recordedAt",
+          "payload"
+        ],
+        "properties": {
+          "sequence": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "SESSION_STARTED",
+              "DEMO_FUNDS_ALLOCATED",
+              "SESSION_COMPLETED",
+              "ORDER_ACCEPTED",
+              "ORDER_TRIGGERED",
+              "ORDER_FILLED",
+              "ORDER_CANCELED",
+              "POSITION_LIQUIDATED"
+            ]
+          },
+          "effectiveAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "recordedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "payload": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "LedgerEntry": {
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "amountMinor",
+          "effectiveAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "DEMO_ALLOCATION",
+              "SPOT_BUY",
+              "SPOT_SELL",
+              "PERP_PNL"
+            ]
+          },
+          "amountMinor": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "effectiveAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "asset": {
+            "type": "string",
+            "enum": [
+              "USD",
+              "XRP",
+              "SOL",
+              "ETH"
+            ]
+          },
+          "operationId": {
+            "type": "string"
+          },
+          "scale": {
+            "type": "integer",
+            "enum": [
+              2,
+              6,
+              12
+            ]
+          }
+        }
+      },
+      "Summary": {
+        "type": "object",
+        "required": [
+          "id",
+          "scenarioId",
+          "state",
+          "startedAt",
+          "expiresAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
+          },
+          "scenarioId": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "active",
+              "completed"
+            ]
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Trading": {
+        "type": "object",
+        "description": "Current snapshot only; no private script frames. Decimal quantities/prices and cash are strings. USD precision12, asset quantity and price precision6.",
+        "required": [
+          "mode",
+          "cash",
+          "availableCash",
+          "currency",
+          "cashScale",
+          "quantityScale",
+          "prices",
+          "holdings",
+          "orders",
+          "fills",
+          "goals",
+          "passed",
+          "feeBps",
+          "slippageBps",
+          "liquidity",
+          "positions",
+          "marginUsed",
+          "equity",
+          "products",
+          "orderTypes",
+          "timeInForce",
+          "fundingBps"
+        ],
+        "properties": {
+          "mode": {
+            "const": "scripted"
+          },
+          "cash": {
+            "type": "string"
+          },
+          "availableCash": {
+            "type": "string"
+          },
+          "currency": {
+            "const": "USD"
+          },
+          "cashScale": {
+            "const": 12
+          },
+          "quantityScale": {
+            "const": 6
+          },
+          "prices": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "holdings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Holding"
+            }
+          },
+          "orders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Order"
+            }
+          },
+          "fills": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Fill"
+            }
+          },
+          "goals": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "boolean"
+            }
+          },
+          "passed": {
+            "type": "boolean"
+          },
+          "feeBps": {
+            "const": 0
+          },
+          "slippageBps": {
+            "const": 0
+          },
+          "liquidity": {
+            "const": "unlimited"
+          },
+          "positions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Position"
+            }
+          },
+          "marginUsed": {
+            "type": "string"
+          },
+          "equity": {
+            "type": "string"
+          },
+          "maintenanceBps": {
+            "const": 100
+          },
+          "products": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "orderTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "timeInForce": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "leverages": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "fundingBps": {
+            "const": 0
+          }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "required": [
+          "id",
+          "product",
+          "symbol",
+          "side",
+          "type",
+          "timeInForce",
+          "status",
+          "quantity",
+          "acceptedMs",
+          "triggered"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "product": {
+            "type": "string"
+          },
+          "symbol": {
+            "type": "string"
+          },
+          "side": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "timeInForce": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "limitPrice": {
+            "type": "string"
+          },
+          "stopPrice": {
+            "type": "string"
+          },
+          "acceptedMs": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "triggered": {
+            "type": "boolean"
+          },
+          "leverage": {
+            "type": "integer"
+          },
+          "reduceOnly": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Fill": {
+        "type": "object",
+        "required": [
+          "id",
+          "orderId",
+          "product",
+          "symbol",
+          "side",
+          "quantity",
+          "price",
+          "value",
+          "fee",
+          "reason",
+          "offsetMs"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "orderId": {
+            "type": "string"
+          },
+          "product": {
+            "type": "string"
+          },
+          "symbol": {
+            "type": "string"
+          },
+          "side": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "price": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "fee": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "realizedPnl": {
+            "type": "string"
+          },
+          "trainingBackstop": {
+            "type": "string"
+          },
+          "marginChange": {
+            "type": "string"
+          },
+          "offsetMs": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "Holding": {
+        "type": "object",
+        "required": [
+          "symbol",
+          "quantity",
+          "available",
+          "value"
+        ],
+        "properties": {
+          "symbol": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "available": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      },
+      "Position": {
+        "type": "object",
+        "required": [
+          "symbol",
+          "direction",
+          "quantity",
+          "availableToClose",
+          "entryPrice",
+          "entryNotional",
+          "notional",
+          "margin",
+          "unrealizedPnl",
+          "isolatedEquity",
+          "maintenanceMargin",
+          "leverage"
+        ],
+        "properties": {
+          "symbol": {
+            "type": "string"
+          },
+          "direction": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "availableToClose": {
+            "type": "string"
+          },
+          "entryPrice": {
+            "type": "string"
+          },
+          "entryNotional": {
+            "type": "string"
+          },
+          "notional": {
+            "type": "string"
+          },
+          "margin": {
+            "type": "string"
+          },
+          "unrealizedPnl": {
+            "type": "string"
+          },
+          "isolatedEquity": {
+            "type": "string"
+          },
+          "maintenanceMargin": {
+            "type": "string"
+          },
+          "leverage": {
+            "type": "integer",
+            "enum": [
+              1,
+              2,
+              5
+            ]
+          }
+        }
+      },
+      "LessonProgress": {
+        "type": "object",
+        "required": [
+          "lessonId",
+          "sessionId",
+          "completedAt"
+        ],
+        "properties": {
+          "lessonId": {
+            "type": "string"
+          },
+          "sessionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Invalid command, JSON, key, or cursor",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Local bearer identity required",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Owned session or scenario not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "MethodNotAllowed": {
+        "description": "Unsupported method",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Active session, changed key input, locked prerequisite, completed session, or insufficient available cash/collateral/holdings.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "BodyTooLarge": {
+        "description": "Body exceeds 64 KiB",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "UnsupportedMediaType": {
+        "description": "Use application/json",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "InternalError": {
+        "description": "Internal operation failed; credentials omitted",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unavailable": {
+        "description": "Scenario version conflict",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    }
+  }
+}
